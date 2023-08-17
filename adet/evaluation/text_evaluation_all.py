@@ -6,6 +6,7 @@ import json
 import logging
 import numpy as np
 import os
+import os.path as osp
 import re
 import torch
 from collections import OrderedDict
@@ -48,6 +49,7 @@ class TextEvaluator():
 
         self.voc_size = cfg.MODEL.TRANSFORMER.VOC_SIZE
         self.use_customer_dict = cfg.MODEL.TRANSFORMER.CUSTOM_DICT
+        # self.edist_path = 'edist'
         if self.voc_size == 37:
             self.CTLABELS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
                              't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -284,6 +286,7 @@ class TextEvaluator():
             fin = open(i, 'r').readlines()
             fout = open(out, 'w')
             fout_full = open(out_full, 'w')
+            # edists = []
             for iline, line in enumerate(fin):
                 ptr = line.strip().split(',####')
                 rec  = ptr[1]
@@ -325,6 +328,7 @@ class TextEvaluator():
                     rec_full = rec
                 else:
                     match_word, match_dist = find_match_word(rec,pairs,lexicon)
+                    # edists.append((rec, match_word, match_dist))
                     if match_dist<1.5:
                         rec_full = match_word
                         if "ic15" in self.dataset_name:
@@ -332,6 +336,10 @@ class TextEvaluator():
                         else:
                             pts = pts + ',####' + rec_full
                         fout_full.writelines(pts+'\n')
+            # if self.lexicon_type is not None:
+            #     edist_file = osp.join(self._output_dir, self.edist_path, osp.basename(i).replace('txt', 'json'))
+            #     with open(edist_file, 'w') as ff:
+            #         json.dump(edists, ff)
             fout.close()
             fout_full.close()
 
@@ -389,6 +397,7 @@ class TextEvaluator():
             return {}
 
         PathManager.mkdirs(self._output_dir)
+        # PathManager.mkdirs(osp.join(self._output_dir, self.edist_path))
         if self.submit:
             file_path = os.path.join(self._output_dir, self.dataset_name+"_submit.txt")
             self._logger.info("Saving results to {}".format(file_path))
@@ -458,7 +467,7 @@ class TextEvaluator():
         scores = instances.scores.tolist()
         pnts = instances.bd.numpy()
         recs = instances.recs.numpy()
-
+        timer = instances.timer[0] if len(instances.timer) >0 else []
         results = []
         for pnt, rec, score in zip(pnts, recs, scores):
             poly = self.pnt_to_polygon(pnt)
@@ -471,6 +480,7 @@ class TextEvaluator():
                 "polys": poly,
                 "rec": s,
                 "score": score,
+                "timer": timer
             }
             results.append(result)
         return results

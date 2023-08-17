@@ -19,7 +19,7 @@ from detectron2.modeling import build_model
 from detectron2.checkpoint import DetectionCheckpointer
 import detectron2.data.transforms as T
 from adet.data.augmentation import Pad
-
+from adet.evaluation import load_zip_file
 
 class VisualizationDemo(object):
     def __init__(self, cfg, instance_mode=ColorMode.IMAGE, parallel=False):
@@ -256,11 +256,22 @@ class AsyncPredictor:
         return len(self.procs) * 5
 
 
+
+
+
+
+    
+            
+    
+
+
+
+
 class ViTAEPredictor:
     def __init__(self, cfg):
         self.cfg = cfg.clone()
         self.model = build_model(self.cfg)
-        self.model.eval()
+        
         if len(cfg.DATASETS.TEST):
             self.metadata = MetadataCatalog.get(cfg.DATASETS.TEST[0])
 
@@ -275,6 +286,7 @@ class ViTAEPredictor:
 
         self.input_format = cfg.INPUT.FORMAT
         assert self.input_format in ["RGB", "BGR"], self.input_format
+        self.model.eval()
 
     def __call__(self, original_image):
         """
@@ -290,6 +302,7 @@ class ViTAEPredictor:
             if self.input_format == "RGB":
                 original_image = original_image[:, :, ::-1]
             height, width = original_image.shape[:2]
+            
             image = self.aug.get_transform(original_image).apply_image(original_image)
             image = self.pad.get_transform(image).apply_image(image)
             image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))

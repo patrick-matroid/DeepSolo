@@ -41,6 +41,7 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 from detectron2.utils.logger import setup_logger
 
 from adet.data.dataset_mapper import DatasetMapperWithBasis
+from adet.data.builtin import register_all_coco
 from adet.config import get_cfg
 from adet.checkpoint import AdetCheckpointer
 from adet.evaluation import TextEvaluator
@@ -265,24 +266,46 @@ def setup(args):
     default_setup(cfg, args)
 
     rank = comm.get_rank()
-    setup_logger(cfg.OUTPUT_DIR, distributed_rank=rank, name="adet")
+    logger = setup_logger(cfg.OUTPUT_DIR, distributed_rank=rank, name="adet")
 
-    return cfg
+    return cfg, logger
 
 
 def main(args):
-    cfg = setup(args)
-
+    cfg, logger = setup(args)
+    register_all_coco(voc_size_cfg=cfg.MODEL.TRANSFORMER.VOC_SIZE, num_pts_cfg=cfg.MODEL.TRANSFORMER.NUM_POINTS)
     if args.eval_only:
         model = Trainer.build_model(cfg)
         AdetCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
+        print("#Params",sum(p.numel() for p in model.parameters() if p.requires_grad)/10**6)
         res = Trainer.test(cfg, model) # d2 defaults.py
         if comm.is_main_process():
             verify_results(cfg, res)
         if cfg.TEST.AUG.ENABLED:
             res.update(Trainer.test_with_TTA(cfg, model))
+        if torch.cuda.is_available():
+            max_reserved_mb = torch.cuda.max_memory_reserved() / 1024.0 / 1024.0
+            reserved_mb = torch.cuda.memory_reserved() / 1024.0 / 1024.0
+            max_allocated_mb = torch.cuda.max_memory_allocated() / 1024.0 / 1024.0
+            allocated_mb = torch.cuda.memory_allocated() / 1024.0 / 1024.0
+            # logger = logging.getLogger(__name__)
+
+            logger.info(
+                (
+        
+                    " max_reserved_mem: {:.0f}MB "
+                    " reserved_mem: {:.0f}MB "
+                    " max_allocated_mem: {:.0f}MB "
+                    " allocated_mem: {:.0f}MB "
+                ).format(
+                    max_reserved_mb,
+                    reserved_mb,
+                    max_allocated_mb,
+                    allocated_mb,
+                )
+            )
         return res
 
     """
@@ -301,6 +324,13 @@ def main(args):
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     print("Command Line Args:", args)
+    # import debugpy
+
+    # # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
+    # debugpy.listen(5678)
+    # print("Waiting for debugger attach")
+    # debugpy.wait_for_client()
+
     launch(
         main,
         args.num_gpus,

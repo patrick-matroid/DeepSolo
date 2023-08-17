@@ -11,7 +11,7 @@ from adet.modeling.model.losses import SetCriterion
 from adet.modeling.model.matcher import build_matcher
 from adet.modeling.model.detection_transformer import DETECTION_TRANSFORMER
 from adet.utils.misc import NestedTensor
-
+import time
 
 class Joiner(nn.Sequential):
     def __init__(self, backbone, position_embedding):
@@ -217,6 +217,8 @@ class TransformerPureDetector(nn.Module):
                     loss_dict[k] *= weight_dict[k]
             return loss_dict
         else:
+            assert len(batched_inputs) == 1
+            start_time = time.perf_counter()
             output = self.detection_transformer(images)
             ctrl_point_cls = output["pred_logits"]
             ctrl_point_coord = output["pred_ctrl_points"]
@@ -234,8 +236,9 @@ class TransformerPureDetector(nn.Module):
                 height = input_per_image.get("height", image_size[0])
                 width = input_per_image.get("width", image_size[1])
                 r = detector_postprocess(results_per_image, height, width, self.min_size_test, self.max_size_test)
+                r.timer = [{'time': time.perf_counter()- start_time}] + (len(r.bd)-1)*[None] if len(r.bd) > 0 else []
                 processed_results.append({"instances": r})
-
+            
             return processed_results
 
     def prepare_targets(self, targets):

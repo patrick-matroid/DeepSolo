@@ -30,6 +30,6 @@ SOLVER:
 TEST:
   EVAL_PERIOD: 1000
   # 1 - Generic, 2 - Weak, 3 - Strong (for icdar2015)
-  LEXICON_TYPE: 3
+  LEXICON_TYPE: 2
 
-OUTPUT_DIR: "output/R50/150k_tt_mlt_13_15_textocr/finetune/ic15"
+OUTPUT_DIR: "output/R50/150k_tt_mlt_13_15_textocr/finetune_from_tt/ic15_weak"
