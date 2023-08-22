@@ -1,0 +1,12 @@
+*.jpg
+*.jpeg
+*.png
+*.sh
+__pycache__/
+datasets/
+*.pth
+*.npy
+*.zip
+.ipynb_checkpoints/
+*egg-info
+jabil*
