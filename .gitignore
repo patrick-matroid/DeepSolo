@@ -3,7 +3,8 @@
 *.png
 *.sh
 __pycache__/
-datasets/
+/datasets/
+!/figs/*
 *.pth
 *.npy
 *.zip
