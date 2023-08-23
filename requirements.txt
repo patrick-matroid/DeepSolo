@@ -8,7 +8,11 @@ pillow==9.0.1
 polygon3==3.0.9.1
 rapidfuzz==2.13.7
 #scipy==1.5.2
+<<<<<<< HEAD
 #scikit-image==0.15.0
+=======
+scikit-image==0.15.0
+>>>>>>> 7a537c9f9b05a745b5b47b1609ae4d53b0faa55c
 scikit-learn==0.23.2
 shapely==2.0.0
 timm==0.5.4
