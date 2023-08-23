@@ -1,3 +1,0 @@
-from .text_evaluation_all import TextEvaluator
-from .rrc_evaluation_funcs_ic15 import load_zip_file, decode_utf8, get_tl_line_values_from_file_contents
-from .text_eval_script_ic15 import default_evaluation_params
